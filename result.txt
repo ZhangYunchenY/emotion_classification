@@ -1,0 +1,7 @@
+train_distribution
+{'anger': 3710, 'disgust': 3980, 'fear': 535, 'happiness': 8074, 'like': 3660, 'sadness': 11347, 'surprise': 818}
+
+dev_distribution
+{'anger': 405, 'disgust': 425, 'fear': 59, 'happiness': 907, 'like': 427, 'sadness': 1257, 'surprise': 90}
+
+
