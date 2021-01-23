@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import torch
 import pickle
 from tqdm import tqdm
@@ -7,6 +8,7 @@ from transformers import BertTokenizer
 
 
 LABLE_DIC = {'anger': 0, 'disgust': 1, 'fear': 2, 'happiness': 3, 'like': 4, 'sadness': 5, 'surprise': 6}
+TRANS_DIC = {'anger': '愤怒', 'disgust': '恶心', 'fear': '害怕', 'happiness': '高兴', 'like': '喜爱', 'sadness': '悲伤', 'surprise': '惊讶'}
 
 
 class Example:
@@ -86,6 +88,29 @@ def encoding(examples, model_name):
         bce_labels.append(bce_label)
     print('===== Encoding... =====')
     encoded = tokenizer(sentences, truncation=True, padding=True)
+    input_ids = encoded['input_ids']
+    attention_masks = encoded['attention_mask']
+    token_type_ids = encoded['token_type_ids']
+    feature = Feature(input_ids, attention_masks, token_type_ids, bce_labels=bce_labels, ce_labels=ce_labels)
+    return feature
+
+
+def qa_encoding(examples, model_name):
+    sentences, bce_labels, ce_labels = [], [], []
+    qusetions = []
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+    for example in tqdm(examples, desc='Processing data'):
+        for word in LABLE_DIC.keys():
+            sentences.append(example.content)
+            if example.label == word:
+                bce_labels.append([1])
+                ce_labels.append(1)
+            else:
+                bce_labels.append([0])
+                ce_labels.append(0)
+            qusetions.append(TRANS_DIC[word])
+    print('===== Encoding... =====')
+    encoded = tokenizer(qusetions, sentences, truncation=True, padding=True)
     input_ids = encoded['input_ids']
     attention_masks = encoded['attention_mask']
     token_type_ids = encoded['token_type_ids']
