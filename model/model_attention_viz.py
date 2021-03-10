@@ -8,18 +8,18 @@ class BertForClassification(nn.Module):
     def __init__(self, config, num_labels=1):
         super(BertForClassification, self).__init__()
         self.num_labels = num_labels
-        self.bert = BertModel.from_pretrained('bert-base-chinese', config=config)
-        # self.bert = BertModel.from_pretrained('bert-base-chinese', config=config, output_attentions=True)
+        self.bert = BertModel.from_pretrained('bert-base-chinese', output_attentions=True)
         self.hidden_size = config.hidden_size
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(self.hidden_size, self.num_labels)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
-                labels=None):
+                labels=None, output_attentions=None):
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
+            output_attentions=output_attentions,
             return_dict=None,
         )
         pooled_output = outputs[1]

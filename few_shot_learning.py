@@ -10,25 +10,29 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
 
 
-EPOCH = 2
+NUM = 100
+EPOCH = 10
 BATCH_SIZE = 52
-TARGET = '_lack_of_surprise'
+TARGET = 'surprise'
 LOG_PATH = './log'
 MODEL_NAME = 'bert-base-chinese'
-TRAIN_PATH = './data/train_features' + TARGET + '.pkl'
-DEV_PATH = './data/dev_features' + TARGET + '.pkl'
-MODEL_SAVE_PATH = '../model/motion' + TARGET + '.pt'
+TRAIN_PATH = './data/train_contents.txt'
+DEV_PATH = './data/dev_contents.txt'
+MODEL_PATH = '../model/motion_lack_of_surprise.pt'
+MODEL_SAVE_PATH = '../model/motion_few_shot_surprise_' + str(NUM) + '.pt'
 
 
 def train(train_dataloader, dev_dataloader):
     print('===== Loading model... =====')
     config = BertConfig.from_pretrained(MODEL_NAME)
     model = cls.BertForClassification(config, num_labels=1)
+    static_dict = torch.load(MODEL_PATH)
+    model.load_state_dict(static_dict)
     model.cuda()
     # optimizer and scheduler
     total_step = EPOCH * len(train_dataloader)
-    optimizer = AdamW(model.parameters(), lr=1e-5, weight_decay=0.01)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=10, num_training_steps=total_step)
+    optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_step)
     # tensor board
     tensorboard_writer = SummaryWriter(LOG_PATH)
     # var
@@ -47,8 +51,7 @@ def train(train_dataloader, dev_dataloader):
                            attention_mask=b_attention_masks)
             loss = output
             epoch_loss += loss.item()
-            tensorboard_writer.add_scalar('train_loss', epoch_loss / (step + 1),
-                                          step + i * len(train_dataloader))
+            tensorboard_writer.add_scalar('train_loss', epoch_loss / (step + 1), step + i * len(train_dataloader))
             tensorboard_writer.flush()
             # loss = loss ** 2
             loss.backward()
@@ -73,16 +76,8 @@ def train(train_dataloader, dev_dataloader):
                 loss_fct = nn.BCELoss()
                 bce_loss = loss_fct(logits, d_labels)
                 dev_epoch_loss += bce_loss.item()
-
-                # calculate loss
-
                 # calculate predictions
                 logits = logits.detach().cpu().numpy()
-                # # for multi-classification
-                # for logit in logits:
-                #     index = np.argmax(logit)
-                #     predictions.append(index)
-
                 # for qa
                 for logit in logits:
                     if logit[0] > 0.5:
@@ -91,25 +86,23 @@ def train(train_dataloader, dev_dataloader):
                         predictions.append(0)
 
         dev_epoch_loss /= len(dev_dataloader)
-
         # calculate confusion matrix
-        # TP, TN, FP, FN = 0, 0, 0, 0
-        # i = 0
-        # while i < len(predictions):
-        #     if predictions[i] == 1 and dev_features.ce_labels[i] == 1:
-        #         TP += 1
-        #     elif predictions[i] == 1 and dev_features.ce_labels[i] == 0:
-        #         FP += 1
-        #     elif predictions[i] == 0 and dev_features.ce_labels[i] == 1:
-        #         FN += 1
-        #     else:
-        #         TN += 1
-        #     i += 1
-        # tensorboard_writer.add_scalar('TP', TP, dev_loss_epoch_count)
-        # tensorboard_writer.add_scalar('FP', FP, dev_loss_epoch_count)
-        # tensorboard_writer.add_scalar('FN', FN, dev_loss_epoch_count)
-        # tensorboard_writer.add_scalar('TN', TN, dev_loss_epoch_count)
-
+        TP, TN, FP, FN = 0, 0, 0, 0
+        i = 0
+        while i < len(predictions):
+            if predictions[i] == 1 and dev_features.ce_labels[i] == 1:
+                TP += 1
+            elif predictions[i] == 1 and dev_features.ce_labels[i] == 0:
+                FP += 1
+            elif predictions[i] == 0 and dev_features.ce_labels[i] == 1:
+                FN += 1
+            else:
+                TN += 1
+            i += 1
+        tensorboard_writer.add_scalar('TP', TP, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar('FP', FP, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar('FN', FN, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar('TN', TN, dev_loss_epoch_count)
         precision = metrics.precision_score(dev_features.ce_labels, predictions, average='binary')
         recall = metrics.recall_score(dev_features.ce_labels, predictions, average='binary')
         f1 = metrics.f1_score(dev_features.ce_labels, predictions, average='binary')
@@ -119,13 +112,23 @@ def train(train_dataloader, dev_dataloader):
         tensorboard_writer.add_scalar('dev_f1', f1, dev_loss_epoch_count)
         tensorboard_writer.flush()
         dev_loss_epoch_count += 1
+        # if i == 14:
+        #     break
     # complete
     torch.save(model.state_dict(), MODEL_SAVE_PATH)
 
 
 if __name__ == '__main__':
-    train_features = feature_reader(TRAIN_PATH)
-    dev_features = feature_reader(DEV_PATH)
+    # train_examples = example_reader(TRAIN_PATH)
+    n_examples = pick_train_examples(TARGET, NUM)
+    train_features = qa_binary_encoding(n_examples, TARGET, MODEL_NAME)
+    # train_features = few_shot_encoding(n_examples, TARGET, MODEL_NAME, NUM)
+    # dev_examples = example_reader(DEV_PATH)
+    # dev_features = qa_binary_encoding(dev_examples, TARGET, MODEL_NAME)
+
+    dev_examples = adjust_dataset(DEV_PATH, TARGET)
+    dev_features = qa_binary_encoding(dev_examples, TARGET, MODEL_NAME)
+
     train_dataloader = creat_dataloader(BATCH_SIZE, train_features.input_ids,
                                         train_features.attention_masks,
                                         train_features.token_type_ids,

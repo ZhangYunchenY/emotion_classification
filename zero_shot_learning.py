@@ -1,5 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import sys
-
 sys.path.append('..')
 import numpy as np
 import torch.nn as nn
@@ -9,10 +10,9 @@ from emotion_classification.model import model_bce as cls
 from torch.utils.tensorboard import SummaryWriter
 from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
 
-
 EPOCH = 2
 BATCH_SIZE = 52
-TARGET = '_lack_of_surprise'
+TARGET = '_lack_of_anger'
 LOG_PATH = './log'
 MODEL_NAME = 'bert-base-chinese'
 TRAIN_PATH = './data/train_features' + TARGET + '.pkl'

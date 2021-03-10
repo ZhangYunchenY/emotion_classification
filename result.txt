@@ -4,4 +4,6 @@ train_distribution
 dev_distribution
 {'anger': 405, 'disgust': 425, 'fear': 59, 'happiness': 907, 'like': 427, 'sadness': 1257, 'surprise': 90}
 
+qa_weight 在训练过程中的问题是 xx吗？
 
+0样本学习的时候 问题是 是xx吗？ 检验的时候问题是 xx
