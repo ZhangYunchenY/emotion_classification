@@ -11,13 +11,13 @@ from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
 
 
 EPOCH = 2
-BATCH_SIZE = 52
-TARGET = '_lack_of_surprise'
+BATCH_SIZE = 16
+TARGET = '_qa_w'
 LOG_PATH = './log'
-MODEL_NAME = 'bert-base-chinese'
+MODEL_NAME = 'hfl/chinese-roberta-wwm-ext-large'
 TRAIN_PATH = './data/train_features' + TARGET + '.pkl'
 DEV_PATH = './data/dev_features' + TARGET + '.pkl'
-MODEL_SAVE_PATH = '../model/motion' + TARGET + '.pt'
+MODEL_SAVE_PATH = './roberta_model_save_file/motion' + TARGET + '.pt'
 
 
 def train(train_dataloader, dev_dataloader):
@@ -27,7 +27,7 @@ def train(train_dataloader, dev_dataloader):
     model.cuda()
     # optimizer and scheduler
     total_step = EPOCH * len(train_dataloader)
-    optimizer = AdamW(model.parameters(), lr=1e-5, weight_decay=0.01)
+    optimizer = AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=10, num_training_steps=total_step)
     # tensor board
     tensorboard_writer = SummaryWriter(LOG_PATH)

@@ -8,7 +8,7 @@ class BertForClassification(nn.Module):
     def __init__(self, config, num_labels=1):
         super(BertForClassification, self).__init__()
         self.num_labels = num_labels
-        self.bert = BertModel.from_pretrained('bert-base-chinese', config=config)
+        self.bert = BertModel.from_pretrained('hfl/chinese-roberta-wwm-ext-large', config=config)
         # self.bert = BertModel.from_pretrained('bert-base-chinese', config=config, output_attentions=True)
         self.hidden_size = config.hidden_size
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -29,7 +29,7 @@ class BertForClassification(nn.Module):
         if labels is not None:
             labels = labels.float()
             # pos_weight = neg_count / pos_count (type=float32)
-            weight = torch.tensor(1.)
+            weight = torch.tensor(2.)
             loss_fct = nn.BCEWithLogitsLoss(pos_weight=weight)
             loss = loss_fct(logits, labels)
             return loss
