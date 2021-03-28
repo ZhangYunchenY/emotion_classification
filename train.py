@@ -1,14 +1,14 @@
 import os
 import sys
 sys.path.append('..')
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import numpy as np
 import torch.nn as nn
 from sklearn import metrics
 from emotion_classification.data_processer import *
 from emotion_classification.model import model_bce as cls
 from torch.utils.tensorboard import SummaryWriter
-from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
+from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup, DistilBertConfig
 
 
 def train(train_dataloader, dev_dataloader):
@@ -38,7 +38,7 @@ def train(train_dataloader, dev_dataloader):
                            attention_mask=b_attention_masks)
             loss = output
             epoch_loss += loss.item()
-            tensorboard_writer.add_scalar(TARGET + 'train_loss', epoch_loss / (step + 1),
+            tensorboard_writer.add_scalar(TARGET + '_train_loss', epoch_loss / (step + 1),
                                           step + i * len(train_dataloader))
             tensorboard_writer.flush()
             # loss = loss ** 2
@@ -105,11 +105,11 @@ def train(train_dataloader, dev_dataloader):
         recall = metrics.recall_score(dev_features.ce_labels, predictions, average='binary')
         f1 = metrics.f1_score(dev_features.ce_labels, predictions, average='binary')
         accuracy = metrics.accuracy_score(dev_features.ce_labels, predictions)
-        tensorboard_writer.add_scalar(TARGET + 'dev_epoch_loss', dev_epoch_loss, dev_loss_epoch_count)
-        tensorboard_writer.add_scalar(TARGET + 'dev_acc', accuracy, dev_loss_epoch_count)
-        tensorboard_writer.add_scalar(TARGET + 'dev_precision', precision, dev_loss_epoch_count)
-        tensorboard_writer.add_scalar(TARGET + 'dev_recall', recall, dev_loss_epoch_count)
-        tensorboard_writer.add_scalar(TARGET + 'dev_f1', f1, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar(TARGET + '_dev_epoch_loss', dev_epoch_loss, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar(TARGET + '_dev_acc', accuracy, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar(TARGET + '_dev_precision', precision, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar(TARGET + '_dev_recall', recall, dev_loss_epoch_count)
+        tensorboard_writer.add_scalar(TARGET + '_dev_f1', f1, dev_loss_epoch_count)
         tensorboard_writer.flush()
         dev_loss_epoch_count += 1
     # complete
@@ -123,13 +123,13 @@ TARGET_LIST = ['_lack_of_anger', '_lack_of_disgust', '_lack_of_fear', '_lack_of_
 if __name__ == '__main__':
     for TARGET in TARGET_LIST:
         EPOCH = 2
-        BATCH_SIZE = 17
+        BATCH_SIZE = 56
         TARGET = TARGET
         LOG_PATH = './log'
-        MODEL_NAME = 'hfl/chinese-roberta-wwm-ext-large'
+        MODEL_NAME = 'adamlin/bert-distil-chinese'
         TRAIN_PATH = './data/train_features' + TARGET + '.pkl'
         DEV_PATH = './data/dev_features' + TARGET + '.pkl'
-        MODEL_SAVE_PATH = './roberta_model_save_file/motion' + TARGET + '.pt'
+        MODEL_SAVE_PATH = './distil_bert_models/motion' + TARGET + '.pt'
         train_features = feature_reader(TRAIN_PATH)
         dev_features = feature_reader(DEV_PATH)
         train_dataloader = creat_dataloader(BATCH_SIZE, train_features.input_ids,

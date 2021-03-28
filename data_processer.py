@@ -126,7 +126,7 @@ def qa_encoding(examples, model_name):
             else:
                 bce_labels.append([0])
                 ce_labels.append(0)
-            qusetions.append(TRANS_DIC[word])
+                qusetions.append(TRANS_DIC[word])
     print('===== Encoding... =====')
     encoded = tokenizer(qusetions, sentences, truncation=True, padding=True)
     input_ids = encoded['input_ids']
