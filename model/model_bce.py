@@ -29,7 +29,7 @@ class BertForClassification(nn.Module):
         if labels is not None:
             labels = labels.float()
             # pos_weight = neg_count / pos_count (type=float32)
-            weight = torch.tensor(1.)
+            weight = torch.tensor(2.)
             loss_fct = nn.BCEWithLogitsLoss(pos_weight=weight)
             loss = loss_fct(logits, labels)
             return loss

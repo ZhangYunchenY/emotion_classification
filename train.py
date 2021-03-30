@@ -18,7 +18,7 @@ def train(train_dataloader, dev_dataloader):
     model.cuda()
     # optimizer and scheduler
     total_step = EPOCH * len(train_dataloader)
-    optimizer = AdamW(model.parameters(), lr=2e-6, weight_decay=0.01)
+    optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=10, num_training_steps=total_step)
     # tensor board
     tensorboard_writer = SummaryWriter(LOG_PATH)
@@ -116,20 +116,21 @@ def train(train_dataloader, dev_dataloader):
     torch.save(model.state_dict(), MODEL_SAVE_PATH)
 
 
-TARGET_LIST = ['_lack_of_anger', '_lack_of_disgust', '_lack_of_fear', '_lack_of_happiness', '_lack_of_like',
-               '_lack_of_sadness', '_lack_of_surprise']
+# TARGET_LIST = ['_lack_of_anger', '_lack_of_disgust', '_lack_of_fear', '_lack_of_happiness', '_lack_of_like',
+#                '_lack_of_sadness', '_lack_of_surprise']
+TARGET_LIST = ['_qa_w']
 
 
 if __name__ == '__main__':
     for TARGET in TARGET_LIST:
-        EPOCH = 2
+        EPOCH = 8
         BATCH_SIZE = 56
         TARGET = TARGET
         LOG_PATH = './log'
         MODEL_NAME = 'adamlin/bert-distil-chinese'
         TRAIN_PATH = './data/train_features' + TARGET + '.pkl'
         DEV_PATH = './data/dev_features' + TARGET + '.pkl'
-        MODEL_SAVE_PATH = './distil_bert_models/motion' + TARGET + '.pt'
+        MODEL_SAVE_PATH = './distil_bert_models/motion_2' + TARGET + '.pt'
         train_features = feature_reader(TRAIN_PATH)
         dev_features = feature_reader(DEV_PATH)
         train_dataloader = creat_dataloader(BATCH_SIZE, train_features.input_ids,
